@@ -1,5 +1,7 @@
 """Module with an API for MediaWikis."""
 
+from urllib.parse import quote
+
 class MediaWikiSession(object):
     """Encapsulates a session for requests to a MediaWiki server. This class
     implements all methods which are related to HTTP requests."""
@@ -23,6 +25,23 @@ class MediaWikiSession(object):
         """Make an HTTP request to the server's `index.php` file."""
         return self.req.get(self.index_url, params=params).text
 
+    def pageviews(self, title, start, end):
+        """Return page views of article `title` in the range `start` to `end`.
+        `start` and `end` must be strings in the Format YYYYMMDD.
+        """
+        url = "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/"
+        url += self.domain
+        url += "/all-access/all-agents/"
+        url += quote(title, safe="")
+        url += "/daily/" + start + "/" + end
+
+        result = self.req.get(url).json()
+
+        if "items" in result:
+            return sum((int(x["views"]) for x in result["items"]))
+        else:
+            return 0
+
 class MediaWikiAPI(object):
     """Implements an API for content stored on a MediaWiki."""
 
@@ -37,3 +56,9 @@ class MediaWikiAPI(object):
     def get_content(self, title):
         """Returns the content of an article with title `title`."""
         return self.session.index_call({"action": "raw", "title": title})
+
+    def pageviews(self, title, start, end):
+        """Return page views of article `title` in the range `start` to `end`.
+        `start` and `end` must be strings in the Format YYYYMMDD.
+        """
+        return self.session.pageviews(title, start, end)
