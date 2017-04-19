@@ -42,6 +42,9 @@ class ParseNodeCodes(SitemapTransformer):
         if match:
             link = match.group(1)
             name = match.group(2)
+
+            if not link.startswith("Mathe für Nicht-Freaks"):
+                link = None
         else:
             name = code
             link = None
