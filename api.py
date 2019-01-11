@@ -119,6 +119,9 @@ class MediaWikiAPI(object):
         except KeyError:
             return []
 
+    def revisions_count(self, title, start, end):
+        return len([x for x in self.revisions(title) if x["timestamp"] >= start and x["timestamp"] < end])
+
     def all_titles(self, title):
         """Returns a set of all titles the article `title` had in the past."""
         result = set()
@@ -130,7 +133,12 @@ class MediaWikiAPI(object):
         re2 = ".*hat „%s“ nach „%s“ verschoben.*" % (re_link, re_link)
         regs = [ re.compile(re1), re.compile(re2) ]
 
-        for comment in (x["comment"] for x in self.revisions(title)):
+        for x in self.revisions(title):
+            comment = x.get("comment", "")
+
+            if "comment" not in x:
+                comment = x["commenthidden"]
+
             for reg in regs:
                 m = reg.match(comment)
 
