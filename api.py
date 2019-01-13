@@ -105,22 +105,35 @@ class MediaWikiAPI(object):
         """Returns the content of an article with title `title`."""
         return self.session.index_call({"action": "raw", "title": title})
 
-    def revisions(self, title):
+    def revisions(self, title, start="", end="X"):
         params = {
             "titles": title,
             "prop": "revisions",
             "rvprop": "timestamp|user|size|comment",
             "rvlimit": "max"
         }
-        
+
         try:
-            return self.session.api_query(title, params,
-                ["pages", select_singleton_dict, "revisions"])
+            return [x for x in self.session.api_query(title, params,
+                ["pages", select_singleton_dict, "revisions"]) if
+                x["timestamp"] >= start and x["timestamp"] < end]
         except KeyError:
             return []
 
     def revisions_count(self, title, start, end):
-        return len([x for x in self.revisions(title) if x["timestamp"] >= start and x["timestamp"] < end])
+        return len(self.revisions(title, start, end))
+
+    def authors(self, title, start="", end="X"):
+        result = {}
+
+        for rev in self.revisions(title, start, end):
+            if "user" in rev:
+                if rev["user"] not in result:
+                    result[rev["user"]] = 0
+
+                result[rev["user"]] += 1
+
+        return result
 
     def all_titles(self, title):
         """Returns a set of all titles the article `title` had in the past."""
